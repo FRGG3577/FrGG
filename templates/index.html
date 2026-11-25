@@ -4,55 +4,85 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Наше пространство</title>
-    
-    <!-- Подключаем Telegram скрипт -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Библиотека для конфетти -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
-    <!-- Подключаем наши стили -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="card">
-        <h1 id="greeting">Привет!</h1>
-        <p class="status-text" id="status">Загрузка...</p>
-    </div>
-
-    <div class="card">
-        <p class="status-text">Мы вместе уже</p>
-        <div class="days-counter" id="days-count">...</div>
-        <p class="status-text">дней</p>
-    </div>
-
-    <div class="card">
-        <p class="status-text">Ваше настроение сейчас</p>
-        <div class="mood-row">
-            <div class="mood-item" id="my-mood">
-                <div class="mood-emoji">😐</div>
-                <div class="mood-label">Ты</div>
+    
+    <!-- Экран 1: Главная -->
+    <div id="page-home" class="page active">
+        <div class="card">
+            <h1 id="greeting">Привет!</h1>
+            <p class="status-text" id="status">Загрузка...</p>
+        </div>
+        <div class="card">
+            <p class="status-text">Мы вместе уже</p>
+            <div class="days-counter" id="days-count">...</div>
+            <p class="status-text">дней</p>
+        </div>
+        <div class="card">
+            <p class="status-text">Ваше настроение сейчас</p>
+            <div class="mood-row">
+                <div class="mood-item" id="my-mood"><div class="mood-emoji">😐</div><div class="mood-label">Ты</div></div>
+                <div class="mood-item" id="partner-mood"><div class="mood-emoji">😐</div><div class="mood-label">Партнёр</div></div>
             </div>
-            <div class="mood-item" id="partner-mood">
-                <div class="mood-emoji">😐</div>
-                <div class="mood-label">Партнёр</div>
+            <div class="emoji-selector">
+                <span onclick="setMood('😊')">😊</span>
+                <span onclick="setMood('😍')">😍</span>
+                <span onclick="setMood('😴')">😴</span>
+                <span onclick="setMood('😢')">😢</span>
+                <span onclick="setMood('😡')">😡</span>
             </div>
         </div>
-        <div style="margin-top: 15px; font-size: 24px; display: flex; gap: 10px; justify-content: center;">
-            <span onclick="setMood('😊')" style="cursor:pointer">😊</span>
-            <span onclick="setMood('😍')" style="cursor:pointer">😍</span>
-            <span onclick="setMood('😴')" style="cursor:pointer">😴</span>
-            <span onclick="setMood('😢')" style="cursor:pointer">😢</span>
-            <span onclick="setMood('😡')" style="cursor:pointer">😡</span>
+        <div class="card">
+            <button class="hug-btn" id="hug-button" onclick="sendHug()">💖 Отправить сигнал</button>
         </div>
     </div>
 
-    <div class="card">
-        <button class="hug-btn" id="hug-button" onclick="sendHug()">💖 Отправить сигнал</button>
+    <!-- Экран 2: Wishlist -->
+    <div id="page-wishlist" class="page">
+        <div class="card">
+            <h1>Наши планы 📝</h1>
+            <p class="status-text">Куда сходим или что посмотрим?</p>
+            <div class="input-group">
+                <input type="text" id="wish-input" placeholder="Новый пункт...">
+                <button onclick="addWish()">+</button>
+            </div>
+            <ul id="wish-list" class="list-container"></ul>
+        </div>
     </div>
+
+    <!-- Экран 3: Заметки -->
+    <div id="page-notes" class="page">
+        <div class="card">
+            <h1>Наши послания 💌</h1>
+            <p class="status-text">Оставь записку на день</p>
+            <div class="input-group">
+                <textarea id="note-input" placeholder="Напиши что-нибудь милое..."></textarea>
+            </div>
+            <button class="hug-btn" onclick="addNote()" style="margin-top:10px; font-size: 16px; padding: 10px;">Отправить</button>
+            <div id="notes-list" class="list-container" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- Нижнее меню -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchPage('home', this)">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-text">Главная</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('wishlist', this)">
+            <span class="nav-icon">✨</span>
+            <span class="nav-text">Планы</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('notes', this)">
+            <span class="nav-icon">💌</span>
+            <span class="nav-text">Записки</span>
+        </div>
+    </nav>
 
     <div id="toast">Сообщение отправлено!</div>
-
-    <!-- Подключаем наш скрипт -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
