@@ -2,30 +2,99 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Наше пространство</title>
-    <!-- Подключаем скрипт Telegram -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        :root {
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-color: #1c1e21;
+            --accent: #ff4d4d; /* Цвет любви */
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px; 
+            background: var(--bg-color); 
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .card { 
+            background: var(--card-bg); 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+        h1 { font-size: 24px; margin-top: 0; margin-bottom: 10px; }
+        .status-text { color: #888; font-size: 14px; margin-bottom: 20px; }
+        
+        /* Стили для счетчика */
+        .days-counter { font-size: 48px; font-weight: bold; color: var(--accent); margin: 10px 0; }
+        .days-label { font-size: 16px; color: #666; }
+        
+        /* Стили для кнопки */
+        .hug-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3);
+            width: 100%;
+            font-weight: 600;
+        }
+        .hug-btn:active {
+            transform: scale(0.95);
+            background: #e60000;
+        }
+        .hug-btn:disabled {
+            background: #ccc;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        #user-info { margin-top: 20px; font-size: 14px; color: #888; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>Привет!</h1>
-        <p id="status">Проверка авторизации...</p>
+        <h1>Привет, любимый человек!</h1>
+        <p class="status-text" id="status">Авторизация...</p>
         <div id="user-info"></div>
     </div>
 
+    <div class="card">
+        <h2>Мы вместе уже</h2>
+        <div class="days-counter" id="days-count">...</div>
+        <div class="days-label">дней</div>
+    </div>
+
+    <div class="card">
+        <h2>Просто так</h2>
+        <p class="status-text">Нажми, чтобы отправить сигнал внимания</p>
+        <button class="hug-btn" id="hug-button" onclick="sendHug()">💖 Обнять</button>
+    </div>
+
     <script>
-        // Инициализируем Telegram WebApp
         const tg = window.Telegram.WebApp;
         tg.ready();
+        tg.expand(); // Разворачиваем на весь экран
 
-        // Получаем initData (подписанные данные)
         const initData = tg.initData;
 
-        // Отправляем на сервер для проверки
+        // 1. Проверка пользователя
         fetch('/api/check_user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -34,16 +103,44 @@
         .then(res => res.json())
         .then(data => {
             if (data.status === 'ok') {
-                document.getElementById('status').textContent = 'Авторизация успешна!';
-                document.getElementById('user-info').innerHTML = 
-                    `<p>Твой ID: ${data.user_id}</p><p>Имя: ${data.first_name}</p>`;
+                document.getElementById('status').textContent = 'Успешно авторизован!';
+                document.getElementById('user-info').textContent = `Привет, ${data.first_name}!`;
             } else {
-                document.getElementById('status').textContent = 'Ошибка: ' + data.error;
+                // Если нет initData (например, открыто в браузере), просто показываем заглушку
+                document.getElementById('status').textContent = 'Демо-режим';
             }
         })
-        .catch(err => {
-            document.getElementById('status').textContent = 'Ошибка соединения';
-        });
+        .catch(err => console.log(err));
+
+        // 2. Загрузка счетчика дней
+        fetch('/api/days')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('days-count').textContent = data.days;
+            });
+
+        // 3. Отправка уведомления
+        function sendHug() {
+            const btn = document.getElementById('hug-button');
+            btn.disabled = true;
+            btn.textContent = 'Отправлено! 💌';
+
+            fetch('/api/ping', { method: 'POST' })
+                .then(() => {
+                    // Вернуть кнопку в исходное состояние через 3 секунды
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.textContent = '💖 Обнять';
+                    }, 3000);
+                })
+                .catch(() => {
+                    btn.textContent = 'Ошибка 😔';
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.textContent = '💖 Обнять';
+                    }, 3000);
+                });
+        }
     </script>
 </body>
 </html>
