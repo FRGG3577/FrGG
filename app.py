@@ -20,7 +20,38 @@ def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
-    return {"wishlist": [], "notes": [], "moods": {MY_ID: "😐", PARTNER_ID: "😐"}}
+    return {
+        "wishlist": [], 
+        "notes": [], 
+        "events": [], # <-- НОВОЕ
+        "moods": {MY_ID: "😐", PARTNER_ID: "😐"}
+    }
+
+# В самом низу app.py добавь новые маршруты:
+@app.route('/api/events', methods=['GET', 'POST', 'DELETE'])
+def events():
+    global db
+    if request.method == 'GET':
+        # Сортируем по дате
+        sorted_events = sorted(db.get("events", []), key=lambda x: x["date"])
+        return jsonify(sorted_events)
+    elif request.method == 'POST':
+        data = request.get_json()
+        event_text = data.get('text')
+        event_date = data.get('date') # формат "YYYY-MM-DD"
+        if event_text and event_date:
+            db["events"].append({
+                "id": str(random.randint(1000, 9999)), 
+                "text": event_text,
+                "date": event_date
+            })
+            save_data(db)
+        return jsonify({"status": "ok"})
+    elif request.method == 'DELETE':
+        event_id = request.args.get('id')
+        db["events"] = [e for e in db["events"] if e["id"] != event_id]
+        save_data(db)
+        return jsonify({"status": "ok"})
 
 def save_data(data):
     with open(DATA_FILE, 'w', encoding='utf-8') as f:

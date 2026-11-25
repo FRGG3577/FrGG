@@ -1,3 +1,60 @@
+:root {
+    --bg: #ffeef2;
+    --card: #ffffff;
+    --text: #333;
+    --accent: #ff477e;
+}
+body { 
+    font-family: -apple-system, sans-serif; margin: 0; padding: 20px; 
+    background: var(--bg); color: var(--text); display: flex; 
+    flex-direction: column; align-items: center; min-height: 100vh;
+}
+.card { 
+    background: var(--card); padding: 20px; border-radius: 20px; 
+    box-shadow: 0 8px 20px rgba(255, 71, 126, 0.15); 
+    width: 100%; max-width: 400px; text-align: center; 
+    box-sizing: border-box; margin-bottom: 15px;
+    transition: transform 0.3s;
+}
+.card:active { transform: scale(0.98); }
+
+h1 { font-size: 22px; margin: 0 0 10px; color: var(--accent); }
+.status-text { color: #888; font-size: 14px; margin: 5px 0; }
+
+/* Счетчик */
+.days-counter { font-size: 56px; font-weight: 900; color: var(--accent); margin: 0; line-height: 1; }
+
+/* Настроения */
+.mood-row { display: flex; justify-content: space-around; margin-top: 15px; }
+.mood-item { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.mood-emoji { font-size: 32px; cursor: pointer; transition: transform 0.2s; }
+.mood-emoji:hover { transform: scale(1.2); }
+.mood-label { font-size: 12px; color: #666; }
+
+/* Кнопка */
+.hug-btn {
+    background: var(--accent); color: white; border: none; padding: 15px; 
+    font-size: 18px; border-radius: 50px; width: 100%; font-weight: bold;
+    box-shadow: 0 4px 15px rgba(255, 71, 126, 0.4); cursor: pointer;
+    transition: all 0.2s;
+}
+.hug-btn:active { transform: scale(0.95); box-shadow: 0 2px 5px rgba(255, 71, 126, 0.4); }
+
+/* Анимация появления */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.card { animation: fadeIn 0.5s ease-out forwards; }
+.card:nth-child(2) { animation-delay: 0.1s; }
+.card:nth-child(3) { animation-delay: 0.2s; }
+.card:nth-child(4) { animation-delay: 0.3s; }
+
+/* Всплывающее уведомление */
+#toast {
+    position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+    background: #333; color: white; padding: 10px 20px; border-radius: 30px;
+    font-size: 14px; transition: bottom 0.3s; z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
 /* ... (оставляем весь предыдущий CSS) ... */
 
 /* Навигация и страницы */
@@ -44,3 +101,89 @@ body { padding-bottom: 80px; } /* Оставляем место для нижн�
     align-items: center; font-size: 15px; border-left: 4px solid var(--accent);
 }
 .delete-btn { background: none; border: none; color: #ff4d4d; font-size: 20px; cursor: pointer; padding: 0 5px; }
+
+/* --- ЖИВОЙ ФОН --- */
+body {
+    margin: 0;
+    padding: 20px;
+    padding-bottom: 80px;
+    font-family: -apple-system, sans-serif;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    /* Убираем старый сплошной цвет фона */
+    background: #fff0f5; 
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Круги для фона */
+.bg-blobs {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    filter: blur(60px); /* Размытие для эффекта "облаков" */
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.7;
+    animation: float 10s infinite ease-in-out alternate;
+}
+
+.blob-1 {
+    width: 300px; height: 300px;
+    background: #ff9a9e;
+    top: -10%; left: -10%;
+    animation-delay: 0s;
+}
+
+.blob-2 {
+    width: 250px; height: 250px;
+    background: #fecfef;
+    bottom: 10%; right: -10%;
+    animation-delay: -3s;
+}
+
+.blob-3 {
+    width: 200px; height: 200px;
+    background: #a18cd1;
+    top: 40%; left: 20%;
+    animation-delay: -6s;
+    opacity: 0.4;
+}
+
+@keyframes float {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -50px) scale(1.1); }
+    100% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+/* Делаем карточки полупрозрачными (Glassmorphism) */
+.card {
+    background: rgba(255, 255, 255, 0.75) !important; /* Полупрозрачный белый */
+    backdrop-filter: blur(15px); /* Эффект матового стекла */
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    /* Остальные стили карточки оставляем */
+    padding: 20px; border-radius: 20px; 
+    box-shadow: 0 8px 20px rgba(255, 71, 126, 0.1); 
+    width: 100%; max-width: 400px; text-align: center; 
+    box-sizing: border-box; margin-bottom: 15px;
+    transition: transform 0.3s;
+}
+
+/* Обновляем нижнее меню, чтобы оно тоже было стеклянным */
+.bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(255, 255, 255, 0.85); /* Полупрозрачное */
+    backdrop-filter: blur(15px);
+    display: flex; justify-content: space-around;
+    padding: 10px 0; box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom, 10px);
+}

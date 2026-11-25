@@ -144,3 +144,90 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
     }
 });
+
+ // В функции switchPage добавь вызов загрузки событий:
+    window.switchPage = function(pageName, element) {
+        // ... предыдущий код ...
+        if (pageName === 'wishlist') loadWishlist();
+        if (pageName === 'notes') loadNotes();
+        if (pageName === 'events') loadEvents(); // <-- ДОБАВИТЬ ЭТО
+    }
+
+    // --- КАЛЕНДАРЬ СОБЫТИЙ ---
+    window.loadEvents = function() {
+        fetch('/api/events').then(res => res.json()).then(events => {
+            const list = document.getElementById('events-list');
+            list.innerHTML = '';
+            const today = new Date();
+            today.setHours(0,0,0,0); // Сбрасываем время для точного расчета
+
+            if (events.length === 0) {
+                list.innerHTML = '<p class="status-text">Пока нет событий. Добавьте первое!</p>';
+                return;
+            }
+
+            events.forEach(event => {
+                const eventDate = new Date(event.date);
+                // Считаем разницу в днях
+                const timeDiff = eventDate.getTime() - today.getTime();
+                const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                
+                let daysText = '';
+                let colorClass = 'color: #666;';
+                
+                if (daysLeft === 0) {
+                    daysText = 'Сегодня! 🎉';
+                    colorClass = 'color: #ff477e; font-weight: bold;';
+                } else if (daysLeft === 1) {
+                    daysText = 'Завтра 🔥';
+                    colorClass = 'color: #ff477e; font-weight: bold;';
+                } else if (daysLeft > 0) {
+                    daysText = `Через ${daysLeft} дн.`;
+                    if (daysLeft <= 3) colorClass = 'color: #ff7f00;'; // Оранжевый, если скоро
+                } else {
+                    daysText = 'Прошло';
+                    colorClass = 'color: #999; text-decoration: line-through;';
+                }
+
+                // Форматируем дату для красоты (ДД.ММ)
+                const dateParts = event.date.split('-');
+                const formatDate = `${dateParts[2]}.${dateParts[1]}`;
+
+                list.innerHTML += `
+                    <li style="border-left-color: ${daysLeft <= 3 && daysLeft >= 0 ? '#ff477e' : '#a18cd1'};">
+                        <div>
+                            <div style="font-weight: bold; margin-bottom: 4px;">${event.text}</div>
+                            <div style="font-size: 12px; color: #888;">
+                                ${formatDate} — <span style="${colorClass}">${daysText}</span>
+                            </div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteEvent('${event.id}')">×</button>
+                    </li>`;
+            });
+        });
+    }
+
+    window.addEvent = function() {
+        const text = document.getElementById('event-input').value;
+        const date = document.getElementById('date-input').value;
+        
+        if (!text.trim() || !date) {
+            showToast("Заполните все поля!");
+            return;
+        }
+
+        fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text, date: date })
+        }).then(() => {
+            document.getElementById('event-input').value = '';
+            document.getElementById('date-input').value = '';
+            loadEvents();
+            showToast("Событие добавлено!");
+        });
+    }
+
+    window.deleteEvent = function(id) {
+        fetch(`/api/events?id=${id}`, { method: 'DELETE' }).then(() => loadEvents());
+    }

@@ -9,7 +9,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
     <!-- Экран 1: Главная -->
     <div id="page-home" class="page active">
         <div class="card">
@@ -68,19 +72,37 @@
 
     <!-- Нижнее меню -->
     <nav class="bottom-nav">
+        <div id="page-events" class="page">
+        <div class="card">
+            <h1>Наш календарь 📅</h1>
+            <p class="status-text">Важные даты и планы</p>
+            
+            <div class="input-group" style="flex-direction: column;">
+                <input type="text" id="event-input" placeholder="Что за событие?">
+                <input type="date" id="date-input" style="margin-top: 10px;">
+                <button onclick="addEvent()" style="margin-top: 10px; padding: 10px;">Добавить</button>
+            </div>
+            
+            <ul id="events-list" class="list-container"></ul>
+        </div>
+    </div>
+
+    <!-- Обнови нижнее меню (nav) -->
+    <nav class="bottom-nav">
         <div class="nav-item active" onclick="switchPage('home', this)">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-text">Главная</span>
+            <span class="nav-icon">🏠</span><span class="nav-text">Главная</span>
         </div>
         <div class="nav-item" onclick="switchPage('wishlist', this)">
-            <span class="nav-icon">✨</span>
-            <span class="nav-text">Планы</span>
+            <span class="nav-icon">✨</span><span class="nav-text">Планы</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('events', this)">
+            <span class="nav-icon">📅</span><span class="nav-text">События</span>
         </div>
         <div class="nav-item" onclick="switchPage('notes', this)">
-            <span class="nav-icon">💌</span>
-            <span class="nav-text">Записки</span>
+            <span class="nav-icon">💌</span><span class="nav-text">Записки</span>
         </div>
     </nav>
+    
 
     <div id="toast">Сообщение отправлено!</div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
