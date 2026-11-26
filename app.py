@@ -82,8 +82,7 @@ def index():
 
 @app.route('/ping')
 def ping():
-    # Этот маршрут нужен для Cron-job.org, чтобы Render не засыпал
-    return "OK"
+    return "", 204  # 204 No Content — сервер явно говорит, что тела ответа нет
 
 @app.route('/api/check_user', methods=['POST'])
 def check_user():
