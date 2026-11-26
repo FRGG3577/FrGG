@@ -4,16 +4,22 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Наше пространство</title>
+    
+    <!-- Telegram и Конфетти -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Наши стили -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <!-- Живой фон -->
     <div class="bg-blobs">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
         <div class="blob blob-3"></div>
     </div>
+
     <!-- Экран 1: Главная -->
     <div id="page-home" class="page active">
         <div class="card">
@@ -57,7 +63,21 @@
         </div>
     </div>
 
-    <!-- Экран 3: Заметки -->
+    <!-- Экран 3: События -->
+    <div id="page-events" class="page">
+        <div class="card">
+            <h1>Наш календарь 📅</h1>
+            <p class="status-text">Важные даты и планы</p>
+            <div class="input-group" style="flex-direction: column;">
+                <input type="text" id="event-input" placeholder="Что за событие?">
+                <input type="date" id="date-input" style="margin-top: 10px;">
+                <button onclick="addEvent()" style="margin-top: 10px; padding: 10px;">Добавить</button>
+            </div>
+            <ul id="events-list" class="list-container"></ul>
+        </div>
+    </div>
+
+    <!-- Экран 4: Заметки -->
     <div id="page-notes" class="page">
         <div class="card">
             <h1>Наши послания 💌</h1>
@@ -72,23 +92,6 @@
 
     <!-- Нижнее меню -->
     <nav class="bottom-nav">
-        <div id="page-events" class="page">
-        <div class="card">
-            <h1>Наш календарь 📅</h1>
-            <p class="status-text">Важные даты и планы</p>
-            
-            <div class="input-group" style="flex-direction: column;">
-                <input type="text" id="event-input" placeholder="Что за событие?">
-                <input type="date" id="date-input" style="margin-top: 10px;">
-                <button onclick="addEvent()" style="margin-top: 10px; padding: 10px;">Добавить</button>
-            </div>
-            
-            <ul id="events-list" class="list-container"></ul>
-        </div>
-    </div>
-
-    <!-- Обнови нижнее меню (nav) -->
-    <nav class="bottom-nav">
         <div class="nav-item active" onclick="switchPage('home', this)">
             <span class="nav-icon">🏠</span><span class="nav-text">Главная</span>
         </div>
@@ -102,9 +105,10 @@
             <span class="nav-icon">💌</span><span class="nav-text">Записки</span>
         </div>
     </nav>
-    
 
     <div id="toast">Сообщение отправлено!</div>
+    
+    <!-- Наш скрипт -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

@@ -9,20 +9,21 @@ from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 
+# --- НАСТРОЙКИ ---
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-DATABASE_URL = os.environ.get("DATABASE_URL")  # Neon connection string
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
+# ОБЯЗАТЕЛЬНО ЗАМЕНИ НА РЕАЛЬНЫЕ ID (узнать можно через @userinfobot)
 PARTNER_ID = "5475803324" 
-MY_ID = "5475803324"
+MY_ID = "5475803324"      
 START_DATE = datetime(2023, 12, 10)
 
 def get_db():
-    """Возвращает соединение с БД"""
-    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-    return conn
+    """Подключение к базе данных"""
+    return psycopg2.connect(DATABASE_URL, sslmode='require')
 
 def init_db():
-    """Создаёт таблицы при первом запуске"""
+    """Создает таблицы, если их нет"""
     conn = get_db()
     cur = conn.cursor()
     cur.execute('''
@@ -50,10 +51,63 @@ def init_db():
     cur.close()
     conn.close()
 
-# Инициализация при старте
-init_db()
+# Инициализируем базу при старте
+try:
+    init_db()
+    print("База данных успешно инициализирована")
+except Exception as e:
+    print(f"Ошибка инициализации БД: {e}")
 
-# ... (функция send_telegram_message остаётся без изменений) ...
+# --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+def send_telegram_message(chat_id, text):
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+    try:
+        requests.post(url, json=payload)
+    except Exception as e:
+        print(f"Ошибка отправки: {e}")
+
+COMPLIMENTS = [
+    "Ты — мой самый любимый человек на свете. ❤️",
+    "Я счастлив(а), что ты рядом. ✨",
+    "Твоя улыбка делает мой день лучше. 😊",
+    "Спасибо, что ты есть. 🥰",
+    "Ты — мой личный источник вдохновения. 🌟"
+]
+
+# --- МАРШРУТЫ ---
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/ping')
+def ping():
+    # Этот маршрут нужен для Cron-job.org, чтобы Render не засыпал
+    return "OK"
+
+@app.route('/api/check_user', methods=['POST'])
+def check_user():
+    data = request.get_json()
+    init_data = data.get('initData')
+    if not init_data: return jsonify({"error": "No initData"}), 400
+    try:
+        validate(init_data, BOT_TOKEN)
+        parsed = parse(init_data)
+        user = parsed.get('user', {})
+        return jsonify({"status": "ok", "user_id": str(user.get('id')), "first_name": user.get('first_name')})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 401
+
+@app.route('/api/ping', methods=['POST'])
+def ping_partner():
+    text = f"💖 <b>Сигнал внимания!</b>\n\n<i>{random.choice(COMPLIMENTS)}</i>"
+    send_telegram_message(PARTNER_ID, text)
+    return jsonify({"status": "sent"})
+
+@app.route('/api/days', methods=['GET'])
+def days_together():
+    delta = datetime.now() - START_DATE
+    return jsonify({"days": delta.days})
 
 @app.route('/api/wishlist', methods=['GET', 'POST', 'DELETE'])
 def wishlist():
@@ -81,8 +135,59 @@ def wishlist():
         cur.close(); conn.close()
         return jsonify({"status": "ok"})
 
-# Аналогично перепиши /api/notes и /api/events, используя SQL-запросы вместо работы с JSON.
-# Для /api/mood используй UPSERT:
+@app.route('/api/notes', methods=['GET', 'POST'])
+def notes():
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    if request.method == 'GET':
+        cur.execute("SELECT * FROM notes ORDER BY id DESC")
+        items = cur.fetchall()
+        cur.close(); conn.close()
+        # Форматируем дату для фронтенда
+        for item in items:
+            item['date'] = item['created_at'].strftime("%d.%m")
+        return jsonify(items)
+    
+    elif request.method == 'POST':
+        note = request.get_json().get('note')
+        if note:
+            cur.execute("INSERT INTO notes (text) VALUES (%s)", (note,))
+            conn.commit()
+        cur.close(); conn.close()
+        return jsonify({"status": "ok"})
+
+@app.route('/api/events', methods=['GET', 'POST', 'DELETE'])
+def events():
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    
+    if request.method == 'GET':
+        cur.execute("SELECT * FROM events ORDER BY date ASC")
+        items = cur.fetchall()
+        cur.close(); conn.close()
+        # Превращаем объект date в строку для JSON
+        for item in items:
+            item['date'] = item['date'].strftime("%Y-%m-%d")
+        return jsonify(items)
+    
+    elif request.method == 'POST':
+        data = request.get_json()
+        text = data.get('text')
+        date = data.get('date')
+        if text and date:
+            cur.execute("INSERT INTO events (text, date) VALUES (%s, %s)", (text, date))
+            conn.commit()
+        cur.close(); conn.close()
+        return jsonify({"status": "ok"})
+    
+    elif request.method == 'DELETE':
+        event_id = request.args.get('id')
+        cur.execute("DELETE FROM events WHERE id = %s", (event_id,))
+        conn.commit()
+        cur.close(); conn.close()
+        return jsonify({"status": "ok"})
+
 @app.route('/api/mood', methods=['POST'])
 def update_mood():
     data = request.get_json()
@@ -98,7 +203,6 @@ def update_mood():
     conn.commit()
     cur.close(); conn.close()
     
-    # Уведомление партнёру
     target_id = PARTNER_ID if user_id == MY_ID else MY_ID
     send_telegram_message(target_id, f"Твоя половинка сейчас чувствует себя: {mood}")
     return jsonify({"status": "ok"})
@@ -113,3 +217,6 @@ def get_moods():
     
     moods = {row['user_id']: row['mood'] for row in rows}
     return jsonify(moods)
+
+if __name__ == '__main__':
+    app.run(debug=True)
