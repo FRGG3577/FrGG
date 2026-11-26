@@ -2,3 +2,4 @@ Flask
 gunicorn
 telegram-init-data
 requests
+psycopg2-binary 
