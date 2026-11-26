@@ -90,6 +90,20 @@
         </div>
     </div>
 
+    <div id="page-game" class="page">
+        <div class="card">
+            <h1>Крестики-нолики 🎮</h1>
+            <p class="status-text" id="game-status">Загрузка...</p>
+            
+            <!-- Само поле -->
+            <div class="game-board" id="game-board">
+                <!-- Клетки будут генерироваться через JS -->
+            </div>
+            
+            <button class="hug-btn" onclick="resetGame()" style="margin-top: 20px; background: #a18cd1;">🔄 Начать заново</button>
+        </div>
+    </div>
+
     <!-- Нижнее меню -->
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="switchPage('home', this)">
@@ -101,10 +115,14 @@
         <div class="nav-item" onclick="switchPage('events', this)">
             <span class="nav-icon">📅</span><span class="nav-text">События</span>
         </div>
+        <div class="nav-item" onclick="switchPage('game', this)">
+            <span class="nav-icon">🎮</span><span class="nav-text">Игра</span>
+        </div>
         <div class="nav-item" onclick="switchPage('notes', this)">
             <span class="nav-icon">💌</span><span class="nav-text">Записки</span>
         </div>
     </nav>
+
 
     <div id="toast">Сообщение отправлено!</div>
     

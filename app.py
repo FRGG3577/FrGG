@@ -216,6 +216,119 @@ def get_moods():
     
     moods = {row['user_id']: row['mood'] for row in rows}
     return jsonify(moods)
+# ... (твои существующие импорты)
+
+# --- ИНИЦИАЛИЗАЦИЯ ТАБЛИЦЫ ДЛЯ ИГРЫ ---
+def init_game_db():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS game_state (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            board TEXT DEFAULT '---------',
+            turn TEXT DEFAULT 'X',
+            winner TEXT DEFAULT '',
+            last_move_by TEXT DEFAULT ''
+        );
+        INSERT INTO game_state (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+    ''')
+    conn.commit()
+    cur.close()
+    conn.close()
+
+init_game_db()
+
+# --- ЭНДПОИНТЫ ДЛЯ ИГРЫ ---
+
+@app.route('/api/game/state', methods=['GET'])
+def get_game_state():
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT * FROM game_state WHERE id = 1")
+    state = cur.fetchone()
+    cur.close(); conn.close()
+    return jsonify(state)
+
+@app.route('/api/game/move', methods=['POST'])
+def make_move():
+    data = request.get_json()
+    index = int(data.get('index'))
+    user_id = str(data.get('user_id'))
+    
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT * FROM game_state WHERE id = 1")
+    state = cur.fetchone()
+    
+    board = list(state['board'])
+    winner = state['winner']
+    turn = state['turn']
+    
+    # Проверки: игра окончена, клетка занята, не твой ход
+    if winner:
+        cur.close(); conn.close()
+        return jsonify({"error": "Игра уже окончена"}), 400
+        
+    if board[index] != '-':
+        cur.close(); conn.close()
+        return jsonify({"error": "Клетка занята"}), 400
+
+    # Определяем, кто ходит (X или O) на основе ID
+    # В нашем случае MY_ID ходит первым (X), PARTNER_ID вторым (O)
+    expected_turn = 'X' if user_id == MY_ID else 'O'
+    if turn != expected_turn:
+        cur.close(); conn.close()
+        return jsonify({"error": "Не твой ход"}), 400
+
+    # Делаем ход
+    board[index] = turn
+    new_board = "".join(board)
+    
+    # Проверка на победу
+    win_patterns = [
+        [0,1,2], [3,4,5], [6,7,8], # Горизонтали
+        [0,3,6], [1,4,7], [2,5,8], # Вертикали
+        [0,4,8], [2,4,6]           # Диагонали
+    ]
+    
+    new_winner = ''
+    for p in win_patterns:
+        if new_board[p[0]] == new_board[p[1]] == new_board[p[2]] != '-':
+            new_winner = turn
+            break
+            
+    if not new_winner and '-' not in new_board:
+        new_winner = 'Draw' # Ничья
+
+    # Меняем ход, если игра не окончена
+    next_turn = 'O' if turn == 'X' else 'X'
+    if new_winner: next_turn = turn
+
+    cur.execute('''
+        UPDATE game_state 
+        SET board = %s, turn = %s, winner = %s, last_move_by = %s 
+        WHERE id = 1
+    ''', (new_board, next_turn, new_winner, user_id))
+    conn.commit()
+    
+    cur.close(); conn.close()
+    
+    # Отправляем уведомление партнёру, что он должен сделать ход
+    target_id = PARTNER_ID if user_id == MY_ID else MY_ID
+    if not new_winner:
+        send_telegram_message(target_id, "Твой ход в игре! 🎮")
+
+    return jsonify({"status": "ok"})
+
+# Маршрут для сброса игры
+@app.route('/api/game/reset', methods=['POST'])
+def reset_game():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE game_state SET board = '---------', turn = 'X', winner = '', last_move_by = '' WHERE id = 1")
+    conn.commit()
+    cur.close(); conn.close()
+    return jsonify({"status": "ok"})
 
 if __name__ == '__main__':
     app.run(debug=True)
