@@ -4,15 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Наше пространство</title>
-    
-    <!-- Telegram и Конфетти -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
-    <!-- Наши стили -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+
     <!-- Живой фон -->
     <div class="bg-blobs">
         <div class="blob blob-1"></div>
@@ -26,11 +23,13 @@
             <h1 id="greeting">Привет!</h1>
             <p class="status-text" id="status">Загрузка...</p>
         </div>
+        
         <div class="card">
             <p class="status-text">Мы вместе уже</p>
             <div class="days-counter" id="days-count">...</div>
             <p class="status-text">дней</p>
         </div>
+        
         <div class="card">
             <p class="status-text">Ваше настроение сейчас</p>
             <div class="mood-row">
@@ -45,6 +44,7 @@
                 <span onclick="setMood('😡')">😡</span>
             </div>
         </div>
+        
         <div class="card">
             <button class="hug-btn" id="hug-button" onclick="sendHug()">💖 Отправить сигнал</button>
         </div>
@@ -63,7 +63,7 @@
         </div>
     </div>
 
-    <!-- Экран 3: События -->
+    <!-- Экран 3: Календарь -->
     <div id="page-events" class="page">
         <div class="card">
             <h1>Наш календарь 📅</h1>
@@ -71,36 +71,32 @@
             <div class="input-group" style="flex-direction: column;">
                 <input type="text" id="event-input" placeholder="Что за событие?">
                 <input type="date" id="date-input" style="margin-top: 10px;">
-                <button onclick="addEvent()" style="margin-top: 10px; padding: 10px;">Добавить</button>
+                <button onclick="addEvent()" style="margin-top: 10px; padding: 14px;">Добавить</button>
             </div>
             <ul id="events-list" class="list-container"></ul>
         </div>
     </div>
 
-    <!-- Экран 4: Заметки -->
+    <!-- Экран 4: Игра -->
+    <div id="page-game" class="page">
+        <div class="card">
+            <h1>Крестики-нолики 🎮</h1>
+            <p class="status-text" id="game-status">Загрузка...</p>
+            <div class="game-board" id="game-board"></div>
+            <button class="hug-btn" onclick="resetGame()" style="margin-top: 20px; background: linear-gradient(135deg, #a18cd1, #fbc2eb);">🔄 Начать заново</button>
+        </div>
+    </div>
+
+    <!-- Экран 5: Записки -->
     <div id="page-notes" class="page">
         <div class="card">
             <h1>Наши послания 💌</h1>
             <p class="status-text">Оставь записку на день</p>
             <div class="input-group">
-                <textarea id="note-input" placeholder="Напиши что-нибудь милое..."></textarea>
+                <textarea id="note-input" placeholder="Напиши что-нибудь милое..." rows="3"></textarea>
             </div>
-            <button class="hug-btn" onclick="addNote()" style="margin-top:10px; font-size: 16px; padding: 10px;">Отправить</button>
+            <button class="hug-btn" onclick="addNote()" style="margin-top:15px; font-size: 16px; padding: 12px;">Отправить</button>
             <div id="notes-list" class="list-container" style="margin-top: 20px;"></div>
-        </div>
-    </div>
-
-    <div id="page-game" class="page">
-        <div class="card">
-            <h1>Крестики-нолики 🎮</h1>
-            <p class="status-text" id="game-status">Загрузка...</p>
-            
-            <!-- Само поле -->
-            <div class="game-board" id="game-board">
-                <!-- Клетки будут генерироваться через JS -->
-            </div>
-            
-            <button class="hug-btn" onclick="resetGame()" style="margin-top: 20px; background: #a18cd1;">🔄 Начать заново</button>
         </div>
     </div>
 
@@ -123,10 +119,9 @@
         </div>
     </nav>
 
-
     <div id="toast">Сообщение отправлено!</div>
     
-    <!-- Наш скрипт -->
+    <!-- Подключаем скрипт -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
