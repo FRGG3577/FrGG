@@ -99,8 +99,33 @@
             <div id="notes-list" class="list-container" style="margin-top: 20px;"></div>
         </div>
     </div>
+    
+    <!-- Экран 6: Рандомайзер -->
+    <div id="page-random" class="page">
+        <div class="card">
+            <h1>Колесо Фортуны 🎡</h1>
+            <p class="status-text">Не можете решить? Пусть выберет случай!</p>
+            
+            <div class="wheel-container">
+                <canvas id="wheel" width="300" height="300"></canvas>
+                <div class="wheel-pointer">▼</div>
+            </div>
+            
+            <button class="hug-btn" id="spin-btn" onclick="spinWheel()" style="margin-top: 20px;">Крутить!</button>
+            <p id="wheel-result" style="margin-top: 15px; font-weight: bold; font-size: 18px; color: var(--accent-pink);"></p>
+        </div>
 
-    <!-- Нижнее меню -->
+        <div class="card">
+            <h1>Генератор идей 💡</h1>
+            <p class="status-text">Что нам сделать сегодня?</p>
+            <div id="idea-box" class="idea-box">
+                Нажми кнопку ниже 👇
+            </div>
+            <button class="hug-btn" onclick="generateIdea()" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);">Сгенерировать идею</button>
+        </div>
+    </div>
+
+    <!-- Обнови нижнее меню (nav) -->
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="switchPage('home', this)">
             <span class="nav-icon">🏠</span><span class="nav-text">Главная</span>
@@ -113,6 +138,9 @@
         </div>
         <div class="nav-item" onclick="switchPage('game', this)">
             <span class="nav-icon">🎮</span><span class="nav-text">Игра</span>
+        </div>
+        <div class="nav-item" onclick="switchPage('random', this)">
+            <span class="nav-icon">🎲</span><span class="nav-text">Рандом</span>
         </div>
         <div class="nav-item" onclick="switchPage('notes', this)">
             <span class="nav-icon">💌</span><span class="nav-text">Записки</span>

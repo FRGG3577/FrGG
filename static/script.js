@@ -91,6 +91,10 @@ document.addEventListener('DOMContentLoaded', () => {
             window.gameInterval = null;
         }
 
+        if (pageName === 'random') {
+            drawWheel(); // Рисуем колесо при заходе на вкладку
+        }
+
         // Загружаем данные при переходе
         if (pageName === 'wishlist') loadWishlist();
         if (pageName === 'notes') loadNotes();
@@ -321,6 +325,143 @@ document.addEventListener('DOMContentLoaded', () => {
             loadGameState();
             showToast("Игра начата заново!");
         });
+    }
+
+        // ==========================================
+    // 10. КОЛЕСО ФОРТУНЫ И РАНДОМАЙЗЕР
+    // ==========================================
+    
+    // Массив вариантов для колеса (можешь поменять на свои)
+    const wheelOptions = ["Кино 🍿", "Гулять 🚶‍♀️", "Дома 🏠", "Кафе ☕", "Играть 🎮", "Спать 😴"];
+    const wheelColors = ["#ff9a9e", "#fecfef", "#a18cd1", "#fbc2eb", "#ffd1d1", "#d1d1ff"];
+    
+    let currentAngle = 0;
+    let isSpinning = false;
+    let wheelCanvas, ctx;
+
+    window.drawWheel = function() {
+        wheelCanvas = document.getElementById('wheel');
+        if (!wheelCanvas) return;
+        ctx = wheelCanvas.getContext('2d');
+        
+        const numOptions = wheelOptions.length;
+        const arcSize = (2 * Math.PI) / numOptions;
+        const centerX = wheelCanvas.width / 2;
+        const centerY = wheelCanvas.height / 2;
+        const radius = centerX;
+
+        // Очищаем
+        ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
+
+        for (let i = 0; i < numOptions; i++) {
+            const startAngle = i * arcSize + currentAngle;
+            const endAngle = (i + 1) * arcSize + currentAngle;
+
+            // Рисуем сектор
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.fillStyle = wheelColors[i % wheelColors.length];
+            ctx.fill();
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Рисуем текст
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(startAngle + arcSize / 2);
+            ctx.textAlign = "right";
+            ctx.fillStyle = "#333";
+            ctx.font = "bold 14px -apple-system, sans-serif";
+            ctx.fillText(wheelOptions[i], radius - 20, 5);
+            ctx.restore();
+        }
+
+        // Рисуем центр
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 15, 0, 2 * Math.PI);
+        ctx.fillStyle = "white";
+        ctx.fill();
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "rgba(0,0,0,0.1)";
+    }
+
+    window.spinWheel = function() {
+        if (isSpinning) return;
+        isSpinning = true;
+        
+        const btn = document.getElementById('spin-btn');
+        btn.disabled = true;
+        btn.textContent = 'Крутится...';
+        document.getElementById('wheel-result').textContent = '';
+
+        // Случайное количество оборотов (от 3 до 5 полных кругов) + случайный угол
+        const spins = Math.floor(Math.random() * 3) + 3; 
+        const randomDegree = Math.random() * 360;
+        const totalRotation = (spins * 360) + randomDegree;
+        
+        // Применяем CSS трансформацию для анимации
+        wheelCanvas.style.transform = `rotate(${totalRotation}deg)`;
+
+        // Ждем окончания анимации (4 секунды, как в CSS)
+        setTimeout(() => {
+            isSpinning = false;
+            btn.disabled = false;
+            btn.textContent = 'Крутить ещё раз!';
+
+            // Вычисляем выигрышный сектор
+            // Угол стрелки всегда смотрит вверх (0 градусов в canvas - это 3 часа, 
+            // поэтому нужно немного математики)
+            const normalizedAngle = (totalRotation % 360);
+            // Стрелка смотрит вверх, значит выигрышный сектор - тот, что оказался наверху
+            const winningIndex = Math.floor(((360 - normalizedAngle + 90) % 360) / (360 / wheelOptions.length));
+            
+            const result = wheelOptions[winningIndex];
+            document.getElementById('wheel-result').textContent = `Выпало: ${result}`;
+            
+            // Конфетти!
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 }, colors: ['#ff9a9e', '#a18cd1'] });
+            }
+            
+            // Сбрасываем визуальный поворот, чтобы в следующий раз крутить заново
+            // (но оставляем текущий угол в памяти, чтобы колесо не прыгало)
+            currentAngle += totalRotation * (Math.PI / 180);
+            
+        }, 4000);
+    }
+
+    // --- ГЕНЕРАТОР ИДЕЙ ---
+    const ideas = [
+        "Приготовить вместе что-то новое 🍳",
+        "Устроить вечер без телефонов 📵",
+        "Пойти на прогулку и сфотографироваться 📸",
+        "Посмотреть фильм под пледом 🎬",
+        "Сделать друг другу массаж 💆‍♀️",
+        "Заказать еду из нового места 🍕",
+        "Поиграть в настольные игры 🎲",
+        "Устроить домашний спа-день 🛁",
+        "Написать друг другу письмо от руки 💌",
+        "Пойти в книжный магазин и выбрать книгу 📚",
+        "Сделать совместный плейлист 🎵",
+        "Потанцевать под любимые песни 💃"
+    ];
+
+    window.generateIdea = function() {
+        const box = document.getElementById('idea-box');
+        box.style.opacity = 0;
+        
+        setTimeout(() => {
+            const randomIdea = ideas[Math.floor(Math.random() * ideas.length)];
+            box.textContent = randomIdea;
+            box.style.opacity = 1;
+            
+            // Легкое конфетти
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 30, spread: 40, origin: { y: 0.8 }, colors: ['#fbc2eb', '#a18cd1'] });
+            }
+        }, 300);
     }
 
     // ==========================================
