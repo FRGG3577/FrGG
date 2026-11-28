@@ -9,147 +9,123 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <div class="bg-blobs"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
 
-    <!-- Живой фон -->
-    <div class="bg-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
-    </div>
-
-    <!-- Экран 1: Главная -->
+    <!-- 1. Главная -->
     <div id="page-home" class="page active">
         <div class="card">
             <h1 id="greeting">Привет!</h1>
             <p class="status-text" id="status">Загрузка...</p>
         </div>
-        
-        <div class="card">
-            <p class="status-text">Мы вместе уже</p>
-            <div class="days-counter" id="days-count">...</div>
-            <p class="status-text">дней</p>
-        </div>
-        
-        <div class="card">
-            <p class="status-text">Ваше настроение сейчас</p>
-            <div class="mood-row">
-                <div class="mood-item" id="my-mood"><div class="mood-emoji">😐</div><div class="mood-label">Ты</div></div>
-                <div class="mood-item" id="partner-mood"><div class="mood-emoji">😐</div><div class="mood-label">Партнёр</div></div>
+        <div class="card flex-row-card">
+            <div class="half-section">
+                <p class="status-text">Мы вместе</p>
+                <div class="days-counter" id="days-count">...</div>
+                <p class="status-text">дней</p>
             </div>
-            <div class="emoji-selector">
-                <span onclick="setMood('😊')">😊</span>
-                <span onclick="setMood('😍')">😍</span>
-                <span onclick="setMood('😴')">😴</span>
-                <span onclick="setMood('😢')">😢</span>
-                <span onclick="setMood('😡')">😡</span>
+            <div class="half-section">
+                <p class="status-text">Настроение</p>
+                <div class="mood-mini">
+                    <div class="mood-item" id="my-mood"><div class="mood-emoji">😐</div><div class="mood-label">Ты</div></div>
+                    <div class="mood-item" id="partner-mood"><div class="mood-emoji">😐</div><div class="mood-label">Партнёр</div></div>
+                </div>
+                <div class="emoji-mini-selector">
+                    <span onclick="setMood('😊')">😊</span><span onclick="setMood('😍')">😍</span><span onclick="setMood('😴')">😴</span><span onclick="setMood('😢')">😢</span>
+                </div>
             </div>
         </div>
-        
+        <div class="card"><button class="hug-btn" id="hug-button" onclick="sendHug()">💖 Отправить сигнал</button></div>
+    </div>
+
+    <!-- 2. Дела (Планы + События) -->
+    <div id="page-todo" class="page">
         <div class="card">
-            <button class="hug-btn" id="hug-button" onclick="sendHug()">💖 Отправить сигнал</button>
+            <h1>Наши дела ✨</h1>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('wishlist', this)">Планы</button>
+                <button class="tab-btn" onclick="switchTab('events', this)">События</button>
+            </div>
+            <div id="tab-content-wishlist" class="tab-content active">
+                <div class="input-group"><input type="text" id="wish-input" placeholder="Что хотим?"><button onclick="addWish()">+</button></div>
+                <ul id="wish-list" class="list-container"></ul>
+            </div>
+            <div id="tab-content-events" class="tab-content">
+                <div class="input-group" style="flex-direction: column;">
+                    <input type="text" id="event-input" placeholder="Событие">
+                    <input type="date" id="date-input" style="margin-top: 10px;">
+                    <button onclick="addEvent()" style="margin-top: 10px; padding: 14px;">Добавить</button>
+                </div>
+                <ul id="events-list" class="list-container"></ul>
+            </div>
         </div>
     </div>
 
-    <!-- Экран 2: Wishlist -->
-    <div id="page-wishlist" class="page">
+    <!-- 3. Игры -->
+    <div id="page-games" class="page">
         <div class="card">
-            <h1>Наши планы 📝</h1>
-            <p class="status-text">Куда сходим или что посмотрим?</p>
-            <div class="input-group">
-                <input type="text" id="wish-input" placeholder="Новый пункт...">
-                <button onclick="addWish()">+</button>
+            <h1>Во что сыграем? 🎮</h1>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchGameTab('tictactoe', this)">Крестики</button>
+                <button class="tab-btn" onclick="switchGameTab('game2048', this)">2048</button>
             </div>
-            <ul id="wish-list" class="list-container"></ul>
-        </div>
-    </div>
-
-    <!-- Экран 3: Календарь -->
-    <div id="page-events" class="page">
-        <div class="card">
-            <h1>Наш календарь 📅</h1>
-            <p class="status-text">Важные даты и планы</p>
-            <div class="input-group" style="flex-direction: column;">
-                <input type="text" id="event-input" placeholder="Что за событие?">
-                <input type="date" id="date-input" style="margin-top: 10px;">
-                <button onclick="addEvent()" style="margin-top: 10px; padding: 14px;">Добавить</button>
+            <div id="game-tictactoe" class="game-content active">
+                <p class="status-text" id="game-status">Загрузка...</p>
+                <div class="game-board" id="game-board"></div>
+                <button class="hug-btn" onclick="resetGame()" style="margin-top: 20px; background: linear-gradient(135deg, #a18cd1, #fbc2eb);">🔄 Заново</button>
             </div>
-            <ul id="events-list" class="list-container"></ul>
+            <div id="game-2048" class="game-content">
+                <div class="score-board"><div>Твой рекорд: <span id="my-score">0</span></div><div>Рекорд партнёра: <span id="partner-score">0</span></div></div>
+                <div class="grid-2048" id="grid-2048"></div>
+                <button class="hug-btn" onclick="init2048()" style="margin-top: 15px; background: linear-gradient(135deg, #ff9a9e, #fecfef);">Начать 2048</button>
+                <button class="hug-btn" onclick="saveScore2048()" style="margin-top: 10px; background: #a18cd1;">Сохранить рекорд</button>
+            </div>
         </div>
     </div>
 
-    <!-- Экран 4: Игра -->
-    <div id="page-game" class="page">
+    <!-- 4. Рандом -->
+    <div id="page-random" class="page">
         <div class="card">
-            <h1>Крестики-нолики 🎮</h1>
-            <p class="status-text" id="game-status">Загрузка...</p>
-            <div class="game-board" id="game-board"></div>
-            <button class="hug-btn" onclick="resetGame()" style="margin-top: 20px; background: linear-gradient(135deg, #a18cd1, #fbc2eb);">🔄 Начать заново</button>
+            <h1>Колесо Фортуны 🎡</h1>
+            <select id="wheel-category" class="category-select" onchange="updateWheel()">
+                <option value="food">Куда пойдем кушать? 🍔</option>
+                <option value="activity">Чем займемся? 🎨</option>
+                <option value="movie">Что посмотрим? 🎬</option>
+            </select>
+            <div class="wheel-container"><canvas id="wheel" width="300" height="300"></canvas><div class="wheel-pointer">▼</div></div>
+            <button class="hug-btn" id="spin-btn" onclick="spinWheel()" style="margin-top: 20px;">Крутить!</button>
+            <p id="wheel-result" style="margin-top: 15px; font-weight: bold; font-size: 18px; color: var(--accent-pink);"></p>
+        </div>
+        <div class="card">
+            <h1>Генератор идей 💡</h1>
+            <select id="idea-category" class="category-select">
+                <option value="date">Идея для свидания</option>
+                <option value="home">Домашний вечер</option>
+                <option value="gift">Что подарить?</option>
+            </select>
+            <div id="idea-box" class="idea-box">Нажми кнопку 👇</div>
+            <button class="hug-btn" onclick="generateIdea()" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);">Сгенерировать</button>
         </div>
     </div>
 
-    <!-- Экран 5: Записки -->
+    <!-- 5. Записки -->
     <div id="page-notes" class="page">
         <div class="card">
             <h1>Наши послания 💌</h1>
-            <p class="status-text">Оставь записку на день</p>
-            <div class="input-group">
-                <textarea id="note-input" placeholder="Напиши что-нибудь милое..." rows="3"></textarea>
-            </div>
+            <div class="input-group"><textarea id="note-input" placeholder="Напиши милое..." rows="3"></textarea></div>
             <button class="hug-btn" onclick="addNote()" style="margin-top:15px; font-size: 16px; padding: 12px;">Отправить</button>
             <div id="notes-list" class="list-container" style="margin-top: 20px;"></div>
         </div>
     </div>
-    
-    <!-- Экран 6: Рандомайзер -->
-    <div id="page-random" class="page">
-        <div class="card">
-            <h1>Колесо Фортуны 🎡</h1>
-            <p class="status-text">Не можете решить? Пусть выберет случай!</p>
-            
-            <div class="wheel-container">
-                <canvas id="wheel" width="300" height="300"></canvas>
-                <div class="wheel-pointer">▼</div>
-            </div>
-            
-            <button class="hug-btn" id="spin-btn" onclick="spinWheel()" style="margin-top: 20px;">Крутить!</button>
-            <p id="wheel-result" style="margin-top: 15px; font-weight: bold; font-size: 18px; color: var(--accent-pink);"></p>
-        </div>
 
-        <div class="card">
-            <h1>Генератор идей 💡</h1>
-            <p class="status-text">Что нам сделать сегодня?</p>
-            <div id="idea-box" class="idea-box">
-                Нажми кнопку ниже 👇
-            </div>
-            <button class="hug-btn" onclick="generateIdea()" style="background: linear-gradient(135deg, #a18cd1, #fbc2eb);">Сгенерировать идею</button>
-        </div>
-    </div>
-
-    <!-- Обнови нижнее меню (nav) -->
+    <!-- Меню -->
     <nav class="bottom-nav">
-        <div class="nav-item active" onclick="switchPage('home', this)">
-            <span class="nav-icon">🏠</span><span class="nav-text">Главная</span>
-        </div>
-        <div class="nav-item" onclick="switchPage('wishlist', this)">
-            <span class="nav-icon">✨</span><span class="nav-text">Планы</span>
-        </div>
-        <div class="nav-item" onclick="switchPage('events', this)">
-            <span class="nav-icon">📅</span><span class="nav-text">События</span>
-        </div>
-        <div class="nav-item" onclick="switchPage('game', this)">
-            <span class="nav-icon">🎮</span><span class="nav-text">Игра</span>
-        </div>
-        <div class="nav-item" onclick="switchPage('random', this)">
-            <span class="nav-icon">🎲</span><span class="nav-text">Рандом</span>
-        </div>
-        <div class="nav-item" onclick="switchPage('notes', this)">
-            <span class="nav-icon">💌</span><span class="nav-text">Записки</span>
-        </div>
+        <div class="nav-item active" onclick="switchPage('home', this)"><span class="nav-icon">🏠</span><span class="nav-text">Главная</span></div>
+        <div class="nav-item" onclick="switchPage('todo', this)"><span class="nav-icon">✨</span><span class="nav-text">Дела</span></div>
+        <div class="nav-item" onclick="switchPage('games', this)"><span class="nav-icon">🎮</span><span class="nav-text">Игры</span></div>
+        <div class="nav-item" onclick="switchPage('random', this)"><span class="nav-icon">🎲</span><span class="nav-text">Рандом</span></div>
+        <div class="nav-item" onclick="switchPage('notes', this)"><span class="nav-icon">💌</span><span class="nav-text">Записки</span></div>
     </nav>
-
     <div id="toast">Сообщение отправлено!</div>
-    
-    <!-- Подключаем скрипт -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
