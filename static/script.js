@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.gameInterval) { clearInterval(window.gameInterval); window.gameInterval = null; }
         if (pageName === 'todo') loadWishlist(); 
         if (pageName === 'notes') loadNotes();
-        if (pageName === 'games') { loadGameState(); window.gameInterval = setInterval(loadGameState, 2000); load2048Records(); }
+        if (pageName === 'games') { loadGameState(); window.gameInterval = setInterval(loadGameState, 2000); load2048Records(); loadSnakeRecords(); }
         if (pageName === 'random') updateWheel();
     }
 
@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.game-content').forEach(content => content.classList.remove('active'));
         document.getElementById(`game-${gameName}`).classList.add('active');
         if (gameName === 'game2048') load2048Records();
+        if (gameName === 'snake') loadSnakeRecords();
     }
 
     // 4. ПЛАНЫ
@@ -132,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.deleteNote = function(id) { if(confirm("Удалить эту записку?")) { fetch(`/api/notes?id=${id}`, { method: 'DELETE' }).then(() => loadNotes()); } }
 
-    // 7. КРЕСТИКИ-НОЛИКИ
+    // 7. КРЕСТИКИ
     window.loadGameState = function() {
         fetch('/api/game/state').then(res => res.json()).then(state => {
             const boardElement = document.getElementById('game-board'); const statusElement = document.getElementById('game-status');
@@ -152,28 +153,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.resetGame = function() { fetch('/api/game/reset', { method: 'POST' }).then(() => { loadGameState(); showToast("Игра начата!"); }); }
 
-    // 8. ИГРА 2048
+    // 8. ИГРА 2048 (ИСПРАВЛЕННАЯ)
     let board2048 = []; let score2048 = 0;
-    window.init2048 = function() {
-        board2048 = Array(16).fill(0); score2048 = 0;
-        document.getElementById('my-score').textContent = "0";
-        addRandomTile(); addRandomTile(); render2048();
-    }
+    window.init2048 = function() { board2048 = Array(16).fill(0); score2048 = 0; document.getElementById('my-score').textContent = "0"; addRandomTile(); addRandomTile(); render2048(); }
     function addRandomTile() { const empty = board2048.map((v, i) => v === 0 ? i : null).filter(v => v !== null); if (empty.length > 0) { const randomIndex = empty[Math.floor(Math.random() * empty.length)]; board2048[randomIndex] = Math.random() < 0.9 ? 2 : 4; } }
-    function render2048() { const grid = document.getElementById('grid-2048'); grid.innerHTML = ''; board2048.forEach(val => { const tile = document.createElement('div'); tile.className = `tile-2048 ${val !== 0 ? 'tile-' + val : ''}`; tile.textContent = val !== 0 ? val : ''; grid.appendChild(tile); }); }
-    window.saveScore2048 = function() {
-        if (!currentUserId || score2048 === 0) return;
-        fetch('/api/2048/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, score: score2048 }) }).then(() => { showToast("Рекорд сохранен!"); load2048Records(); });
-    }
-    window.load2048Records = function() {
-        fetch('/api/2048/records').then(res => res.json()).then(records => {
-            const myRec = records.find(r => r.user_id === currentUserId);
-            const partnerRec = records.find(r => r.user_id !== currentUserId);
-            document.getElementById('my-score').textContent = myRec ? myRec.score : 0;
-            document.getElementById('partner-score').textContent = partnerRec ? partnerRec.score : 0;
-        });
-    }
-    // Базовая логика свайпов для 2048 (упрощенная)
+    function render2048() { const grid = document.getElementById('grid-2048'); if(!grid) return; grid.innerHTML = ''; board2048.forEach(val => { const tile = document.createElement('div'); tile.className = `tile-2048 ${val !== 0 ? 'tile-' + val : ''}`; tile.textContent = val !== 0 ? val : ''; grid.appendChild(tile); }); }
+    window.saveScore2048 = function() { if (!currentUserId || score2048 === 0) return; fetch('/api/2048/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, score: score2048 }) }).then(() => { showToast("Рекорд сохранен!"); load2048Records(); }); }
+    window.load2048Records = function() { fetch('/api/2048/records').then(res => res.json()).then(records => { const myRec = records.find(r => r.user_id === currentUserId); const partnerRec = records.find(r => r.user_id !== currentUserId); if(document.getElementById('my-score')) document.getElementById('my-score').textContent = myRec ? myRec.score : 0; if(document.getElementById('partner-score')) document.getElementById('partner-score').textContent = partnerRec ? partnerRec.score : 0; }); }
     let touchStartX = 0, touchStartY = 0;
     document.getElementById('grid-2048').addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }, {passive: true});
     document.getElementById('grid-2048').addEventListener('touchend', e => {
@@ -181,94 +167,103 @@ document.addEventListener('DOMContentLoaded', () => {
         if (Math.abs(diffX) > Math.abs(diffY)) { if (diffX > 30) move2048('right'); else if (diffX < -30) move2048('left'); }
         else { if (diffY > 30) move2048('down'); else if (diffY < -30) move2048('up'); }
     }, {passive: true});
-
     function move2048(direction) {
-        // Упрощенная логика для демонстрации (для идеала нужен полный алгоритм)
         let moved = false;
         if (direction === 'left' || direction === 'right') {
-            for (let r = 0; r < 4; r++) {
-                let row = [board2048[r*4], board2048[r*4+1], board2048[r*4+2], board2048[r*4+3]];
-                if (direction === 'right') row.reverse();
-                let newRow = row.filter(v => v !== 0);
-                for (let i = 0; i < newRow.length - 1; i++) { if (newRow[i] === newRow[i+1]) { newRow[i] *= 2; score2048 += newRow[i]; newRow[i+1] = 0; moved = true; } }
-                newRow = newRow.filter(v => v !== 0); while (newRow.length < 4) newRow.push(0);
-                if (direction === 'right') newRow.reverse();
-                for (let c = 0; c < 4; c++) board2048[r*4+c] = newRow[c];
-            }
+            for (let r = 0; r < 4; r++) { let row = [board2048[r*4], board2048[r*4+1], board2048[r*4+2], board2048[r*4+3]]; if (direction === 'right') row.reverse(); let newRow = row.filter(v => v !== 0); for (let i = 0; i < newRow.length - 1; i++) { if (newRow[i] === newRow[i+1]) { newRow[i] *= 2; score2048 += newRow[i]; newRow[i+1] = 0; moved = true; } } newRow = newRow.filter(v => v !== 0); while (newRow.length < 4) newRow.push(0); if (direction === 'right') newRow.reverse(); for (let c = 0; c < 4; c++) board2048[r*4+c] = newRow[c]; }
         } else if (direction === 'up' || direction === 'down') {
-             for (let c = 0; c < 4; c++) {
-                let col = [board2048[c], board2048[c+4], board2048[c+8], board2048[c+12]];
-                if (direction === 'down') col.reverse();
-                let newCol = col.filter(v => v !== 0);
-                for (let i = 0; i < newCol.length - 1; i++) { if (newCol[i] === newCol[i+1]) { newCol[i] *= 2; score2048 += newCol[i]; newCol[i+1] = 0; moved = true; } }
-                newCol = newCol.filter(v => v !== 0); while (newCol.length < 4) newCol.push(0);
-                if (direction === 'down') newCol.reverse();
-                for (let r = 0; r < 4; r++) board2048[r*4+c] = newCol[r];
-            }
+             for (let c = 0; c < 4; c++) { let col = [board2048[c], board2048[c+4], board2048[c+8], board2048[c+12]]; if (direction === 'down') col.reverse(); let newCol = col.filter(v => v !== 0); for (let i = 0; i < newCol.length - 1; i++) { if (newCol[i] === newCol[i+1]) { newCol[i] *= 2; score2048 += newCol[i]; newCol[i+1] = 0; moved = true; } } newCol = newCol.filter(v => v !== 0); while (newCol.length < 4) newCol.push(0); if (direction === 'down') newCol.reverse(); for (let r = 0; r < 4; r++) board2048[r*4+c] = newCol[r]; }
         }
         if (moved) { addRandomTile(); render2048(); document.getElementById('my-score').textContent = score2048; }
     }
 
-    // 9. КОЛЕСО И РАНДОМ
-    const wheelData = {
-        food: ["Пицца 🍕", "Суши 🍣", "Бургеры 🍔", "Паста 🍝", "Шаурма 🌯", "Салат 🥗"],
-        activity: ["Кино 🎬", "Прогулка 🚶", "Дома 🏠", "Кафе ☕", "Игры 🎮", "Спорт 🏃"],
-        movie: ["Комедия 😂", "Ужасы 👻", "Фантастика 🚀", "Драма 🎭", "Мультфильм 🧸", "Боевик 💥"]
-    };
-    const wheelColors = ["#ff9a9e", "#fecfef", "#a18cd1", "#fbc2eb", "#ffd1d1", "#d1d1ff"];
-    let currentAngle = 0, isSpinning = false, wheelCanvas, ctx, currentWheelOptions = [];
+    // 9. ЗМЕЙКА
+    const canvas = document.getElementById('snake-canvas');
+    let ctxSnake = canvas ? canvas.getContext('2d') : null;
+    let snake = [], dir = {}, food = {}, scoreSnake = 0, snakeInterval = null;
+    const box = 15; // Размер клетки
 
-    window.updateWheel = function() {
-        const cat = document.getElementById('wheel-category').value;
-        currentWheelOptions = wheelData[cat];
-        drawWheel();
+    window.startSnake = function() {
+        if (!ctxSnake) return;
+        snake = [{x: 9*box, y: 10*box}]; dir = {x: 0, y: 0}; food = getRandomFood(); scoreSnake = 0;
+        if (snakeInterval) clearInterval(snakeInterval);
+        snakeInterval = setInterval(drawSnake, 150);
     }
 
-    window.drawWheel = function() {
-        wheelCanvas = document.getElementById('wheel'); if (!wheelCanvas) return;
-        ctx = wheelCanvas.getContext('2d');
-        const numOptions = currentWheelOptions.length; const arcSize = (2 * Math.PI) / numOptions; const centerX = wheelCanvas.width / 2; const centerY = wheelCanvas.height / 2; const radius = centerX;
-        ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
-        for (let i = 0; i < numOptions; i++) {
-            const startAngle = i * arcSize + currentAngle; const endAngle = (i + 1) * arcSize + currentAngle;
-            ctx.beginPath(); ctx.moveTo(centerX, centerY); ctx.arc(centerX, centerY, radius, startAngle, endAngle); ctx.fillStyle = wheelColors[i % wheelColors.length]; ctx.fill(); ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
-            ctx.save(); ctx.translate(centerX, centerY); ctx.rotate(startAngle + arcSize / 2); ctx.textAlign = "right"; ctx.fillStyle = "#333"; ctx.font = "bold 14px -apple-system, sans-serif"; ctx.fillText(currentWheelOptions[i], radius - 20, 5); ctx.restore();
+    function getRandomFood() {
+        return { x: Math.floor(Math.random() * 20) * box, y: Math.floor(Math.random() * 20) * box };
+    }
+
+    function drawSnake() {
+        if (!ctxSnake) return;
+        ctxSnake.fillStyle = "#f0f0f0"; ctxSnake.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Рисуем еду
+        ctxSnake.fillStyle = "#ff9a9e"; ctxSnake.beginPath(); ctxSnake.arc(food.x + box/2, food.y + box/2, box/2, 0, Math.PI*2); ctxSnake.fill();
+
+        // Двигаем змейку
+        let headX = snake[0].x + dir.x; let headY = snake[0].y + dir.y;
+        snake.unshift({x: headX, y: headY});
+
+        // Проверка на поедание
+        if (headX === food.x && headY === food.y) { scoreSnake++; food = getRandomFood(); } else { snake.pop(); }
+
+        // Проверка на столкновения
+        if (headX < 0 || headX >= canvas.width || headY < 0 || headY >= canvas.height || snake.slice(1).some(s => s.x === headX && s.y === headY)) {
+            clearInterval(snakeInterval); 
+            showToast("Игра окончена! Счет: " + scoreSnake);
+            return;
         }
-        ctx.beginPath(); ctx.arc(centerX, centerY, 15, 0, 2 * Math.PI); ctx.fillStyle = "white"; ctx.fill();
+
+        // Рисуем змейку
+        snake.forEach((s, i) => {
+            ctxSnake.fillStyle = i === 0 ? "#a18cd1" : "#d1d1ff";
+            ctxSnake.fillRect(s.x, s.y, box-2, box-2);
+        });
     }
 
+    // Управление змейкой (свайпы и клавиатура)
+    document.addEventListener('keydown', e => {
+        if (e.key === "ArrowUp" && dir.y === 0) dir = {x: 0, y: -box};
+        if (e.key === "ArrowDown" && dir.y === 0) dir = {x: 0, y: box};
+        if (e.key === "ArrowLeft" && dir.x === 0) dir = {x: -box, y: 0};
+        if (e.key === "ArrowRight" && dir.x === 0) dir = {x: box, y: 0};
+    });
+
+    let snakeTouchX = 0, snakeTouchY = 0;
+    if (canvas) {
+        canvas.addEventListener('touchstart', e => { snakeTouchX = e.touches[0].clientX; snakeTouchY = e.touches[0].clientY; }, {passive: true});
+        canvas.addEventListener('touchend', e => {
+            const diffX = e.changedTouches[0].clientX - snakeTouchX; const diffY = e.changedTouches[0].clientY - snakeTouchY;
+            if (Math.abs(diffX) > Math.abs(diffY)) { if (diffX > 20 && dir.x === 0) dir = {x: box, y: 0}; else if (diffX < -20 && dir.x === 0) dir = {x: -box, y: 0}; }
+            else { if (diffY > 20 && dir.y === 0) dir = {x: 0, y: box}; else if (diffY < -20 && dir.y === 0) dir = {x: 0, y: -box}; }
+        }, {passive: true});
+    }
+
+    window.saveScoreSnake = function() { if (!currentUserId || scoreSnake === 0) return; fetch('/api/snake/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, score: scoreSnake }) }).then(() => { showToast("Рекорд сохранен!"); loadSnakeRecords(); }); }
+    window.loadSnakeRecords = function() { fetch('/api/snake/records').then(res => res.json()).then(records => { const myRec = records.find(r => r.user_id === currentUserId); const partnerRec = records.find(r => r.user_id !== currentUserId); if(document.getElementById('my-score-snake')) document.getElementById('my-score-snake').textContent = myRec ? myRec.score : 0; if(document.getElementById('partner-score-snake')) document.getElementById('partner-score-snake').textContent = partnerRec ? partnerRec.score : 0; }); }
+
+    // 10. КОЛЕСО И РАНДОМ
+    // (Оставляем предыдущую логику)
+    const wheelData = { food: ["Пицца 🍕", "Суши 🍣", "Бургеры 🍔", "Паста 🍝", "Шаурма 🌯", "Салат 🥗"], activity: ["Кино 🎬", "Прогулка 🚶", "Дома 🏠", "Кафе ☕", "Игры 🎮", "Спорт 🏃"], movie: ["Комедия 😂", "Ужасы 👻", "Фантастика 🚀", "Драма 🎭", "Мультфильм 🧸", "Боевик 💥"] };
+    const wheelColors = ["#ff9a9e", "#fecfef", "#a18cd1", "#fbc2eb", "#ffd1d1", "#d1d1ff"];
+    let currentAngle = 0, isSpinning = false, wheelCanvas, ctxWheel, currentWheelOptions = [];
+    window.updateWheel = function() { const cat = document.getElementById('wheel-category').value; currentWheelOptions = wheelData[cat]; drawWheel(); }
+    window.drawWheel = function() {
+        wheelCanvas = document.getElementById('wheel'); if (!wheelCanvas) return; ctxWheel = wheelCanvas.getContext('2d');
+        const numOptions = currentWheelOptions.length; const arcSize = (2 * Math.PI) / numOptions; const centerX = wheelCanvas.width / 2; const centerY = wheelCanvas.height / 2; const radius = centerX;
+        ctxWheel.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
+        for (let i = 0; i < numOptions; i++) { const startAngle = i * arcSize + currentAngle; const endAngle = (i + 1) * arcSize + currentAngle; ctxWheel.beginPath(); ctxWheel.moveTo(centerX, centerY); ctxWheel.arc(centerX, centerY, radius, startAngle, endAngle); ctxWheel.fillStyle = wheelColors[i % wheelColors.length]; ctxWheel.fill(); ctxWheel.strokeStyle = "white"; ctxWheel.lineWidth = 2; ctxWheel.stroke(); ctxWheel.save(); ctxWheel.translate(centerX, centerY); ctxWheel.rotate(startAngle + arcSize / 2); ctxWheel.textAlign = "right"; ctxWheel.fillStyle = "#333"; ctxWheel.font = "bold 14px -apple-system, sans-serif"; ctxWheel.fillText(currentWheelOptions[i], radius - 20, 5); ctxWheel.restore(); }
+        ctxWheel.beginPath(); ctxWheel.arc(centerX, centerY, 15, 0, 2 * Math.PI); ctxWheel.fillStyle = "white"; ctxWheel.fill();
+    }
     window.spinWheel = function() {
-        if (isSpinning) return; isSpinning = true;
-        const btn = document.getElementById('spin-btn'); btn.disabled = true; btn.textContent = 'Крутится...'; document.getElementById('wheel-result').textContent = '';
+        if (isSpinning) return; isSpinning = true; const btn = document.getElementById('spin-btn'); btn.disabled = true; btn.textContent = 'Крутится...'; document.getElementById('wheel-result').textContent = '';
         const spins = Math.floor(Math.random() * 3) + 3; const randomDegree = Math.random() * 360; const totalRotation = (spins * 360) + randomDegree;
         wheelCanvas.style.transform = `rotate(${totalRotation}deg)`;
-        setTimeout(() => {
-            isSpinning = false; btn.disabled = false; btn.textContent = 'Крутить ещё раз!';
-            const normalizedAngle = (totalRotation % 360); const winningIndex = Math.floor(((360 - normalizedAngle + 90) % 360) / (360 / currentWheelOptions.length));
-            document.getElementById('wheel-result').textContent = `Выпало: ${currentWheelOptions[winningIndex]}`;
-            if (typeof confetti === 'function') confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 }, colors: ['#ff9a9e', '#a18cd1'] });
-            currentAngle += totalRotation * (Math.PI / 180);
-        }, 4000);
+        setTimeout(() => { isSpinning = false; btn.disabled = false; btn.textContent = 'Крутить ещё раз!'; const normalizedAngle = (totalRotation % 360); const winningIndex = Math.floor(((360 - normalizedAngle + 90) % 360) / (360 / currentWheelOptions.length)); document.getElementById('wheel-result').textContent = `Выпало: ${currentWheelOptions[winningIndex]}`; if (typeof confetti === 'function') confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 }, colors: ['#ff9a9e', '#a18cd1'] }); currentAngle += totalRotation * (Math.PI / 180); }, 4000);
     }
+    const ideasData = { date: ["Сходить в кино 🍿", "Погулять в парке 🌳", "Устроить пикник 🧺", "Посетить кафе ☕", "Пойти в музей 🖼️", "Покататься на велосипедах 🚲"], home: ["Посмотреть фильм 🎬", "Приготовить ужин 🍳", "Поиграть в настолки 🎲", "Сделать массаж 💆", "Устроить спа 🛁", "Потанцевать 💃"], gift: ["Цветы 💐", "Книга 📚", "Сладости 🍫", "Украшение 💍", "Свидание 🥂", "Сертификат 🎁"] };
+    window.generateIdea = function() { const cat = document.getElementById('idea-category').value; const list = ideasData[cat]; const box = document.getElementById('idea-box'); box.style.opacity = 0; setTimeout(() => { box.textContent = list[Math.floor(Math.random() * list.length)]; box.style.opacity = 1; if (typeof confetti === 'function') confetti({ particleCount: 30, spread: 40, origin: { y: 0.8 }, colors: ['#fbc2eb', '#a18cd1'] }); }, 300); }
 
-    // Генератор идей
-    const ideasData = {
-        date: ["Сходить в кино 🍿", "Погулять в парке 🌳", "Устроить пикник 🧺", "Посетить кафе ☕", "Пойти в музей 🖼️", "Покататься на велосипедах 🚲"],
-        home: ["Посмотреть фильм 🎬", "Приготовить ужин 🍳", "Поиграть в настолки 🎲", "Сделать массаж 💆", "Устроить спа 🛁", "Потанцевать 💃"],
-        gift: ["Цветы 💐", "Книга 📚", "Сладости 🍫", "Украшение 💍", "Свидание 🥂", "Сертификат 🎁"]
-    };
-    window.generateIdea = function() {
-        const cat = document.getElementById('idea-category').value; const list = ideasData[cat];
-        const box = document.getElementById('idea-box'); box.style.opacity = 0;
-        setTimeout(() => {
-            box.textContent = list[Math.floor(Math.random() * list.length)]; box.style.opacity = 1;
-            if (typeof confetti === 'function') confetti({ particleCount: 30, spread: 40, origin: { y: 0.8 }, colors: ['#fbc2eb', '#a18cd1'] });
-        }, 300);
-    }
-
-    // Уведомления
-    function showToast(text) {
-        const toast = document.getElementById('toast'); toast.textContent = text; toast.style.bottom = '80px';
-        setTimeout(() => { toast.style.bottom = '-100px'; }, 3000);
-    }
+    function showToast(text) { const toast = document.getElementById('toast'); toast.textContent = text; toast.style.bottom = '80px'; setTimeout(() => { toast.style.bottom = '-100px'; }, 3000); }
 });
