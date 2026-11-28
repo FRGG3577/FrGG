@@ -11,6 +11,7 @@
 <body>
     <div class="bg-blobs"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
 
+    <!-- 1. Главная -->
     <div id="page-home" class="page active">
         <div class="card">
             <h1 id="greeting">Привет!</h1>
@@ -36,6 +37,7 @@
         <div class="card"><button class="hug-btn" id="hug-button" onclick="sendHug()">💖 Отправить сигнал</button></div>
     </div>
 
+    <!-- 2. Дела -->
     <div id="page-todo" class="page">
         <div class="card">
             <h1>Наши дела ✨</h1>
@@ -58,7 +60,7 @@
         </div>
     </div>
 
-    <!-- Экран Игр -->
+    <!-- 3. Игры -->
     <div id="page-games" class="page">
         <div class="card">
             <h1>Во что сыграем? 🎮</h1>
@@ -86,13 +88,25 @@
             <!-- Змейка -->
             <div id="game-snake" class="game-content">
                 <div class="score-board"><div>Твой рекорд: <span id="my-score-snake">0</span></div><div>Рекорд партнёра: <span id="partner-score-snake">0</span></div></div>
-                <canvas id="snake-canvas" width="300" height="300" style="background: #fff; border-radius: 12px; margin-bottom: 10px;"></canvas>
+                <canvas id="snake-canvas" width="300" height="300"></canvas>
+                
+                <!-- Кнопки управления змейкой -->
+                <div class="snake-controls">
+                    <button onclick="changeDir('up')">▲</button>
+                    <div>
+                        <button onclick="changeDir('left')">◀</button>
+                        <button onclick="changeDir('down')">▼</button>
+                        <button onclick="changeDir('right')">▶</button>
+                    </div>
+                </div>
+
                 <button class="hug-btn" onclick="startSnake()" style="margin-top: 10px; background: linear-gradient(135deg, #ff9a9e, #fecfef);">Начать</button>
                 <button class="hug-btn" onclick="saveScoreSnake()" style="margin-top: 5px; background: #a18cd1;">Сохранить</button>
             </div>
         </div>
     </div>
 
+    <!-- 4. Рандом -->
     <div id="page-random" class="page">
         <div class="card">
             <h1>Колесо Фортуны 🎡</h1>
@@ -117,6 +131,7 @@
         </div>
     </div>
 
+    <!-- 5. Записки -->
     <div id="page-notes" class="page">
         <div class="card">
             <h1>Наши послания 💌</h1>
@@ -126,6 +141,7 @@
         </div>
     </div>
 
+    <!-- Меню -->
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="switchPage('home', this)"><span class="nav-icon">🏠</span><span class="nav-text">Главная</span></div>
         <div class="nav-item" onclick="switchPage('todo', this)"><span class="nav-icon">✨</span><span class="nav-text">Дела</span></div>

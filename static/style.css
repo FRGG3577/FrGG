@@ -82,3 +82,75 @@ h1 { font-size: 24px; margin: 0 0 10px; font-weight: 700; background: linear-gra
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     max-width: 100%;
 }
+
+/* ... (Весь твой предыдущий CSS оставляем) ... */
+
+/* --- ИГРА ЗМЕЙКА (СТИЛИ) --- */
+#snake-canvas {
+    background: #fdfdfd;
+    border-radius: 15px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.05), 0 4px 15px rgba(0,0,0,0.1);
+    margin: 10px auto;
+    display: block;
+    max-width: 100%;
+}
+
+/* Кнопки управления змейкой */
+.snake-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    margin: 15px 0;
+}
+
+.snake-controls div {
+    display: flex;
+    gap: 5px;
+}
+
+.snake-controls button {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0,0,0,0.1);
+    font-size: 20px;
+    color: var(--accent-lavender);
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: all 0.1s;
+}
+
+.snake-controls button:active {
+    background: var(--accent-pink);
+    color: white;
+    transform: scale(0.95);
+}
+
+/* --- СТИЛИ ДЛЯ 2048 --- */
+.grid-2048 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    background: #bbada0;
+    padding: 8px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+    aspect-ratio: 1/1;
+}
+
+.tile-2048 {
+    background: #cdc1b4;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 20px;
+    color: #776e65;
+}
+/* Цвета плиток (оставляем как были) */
+.tile-2 { background: #eee4da; } .tile-4 { background: #ede0c8; } .tile-8 { background: #f2b179; color: white; } .tile-16 { background: #f59563; color: white; } .tile-32 { background: #f67c5f; color: white; } .tile-64 { background: #f65e3b; color: white; } .tile-128 { background: #edcf72; color: white; font-size: 18px; } .tile-256 { background: #edcc61; color: white; font-size: 18px; } .tile-512 { background: #edc850; color: white; font-size: 18px; } .tile-1024 { background: #edc53f; color: white; font-size: 14px; } .tile-2048 { background: #edc22e; color: white; font-size: 14px; }

@@ -54,9 +54,17 @@ document.addEventListener('DOMContentLoaded', () => {
         element.classList.add('active');
 
         if (window.gameInterval) { clearInterval(window.gameInterval); window.gameInterval = null; }
+        
         if (pageName === 'todo') loadWishlist(); 
         if (pageName === 'notes') loadNotes();
-        if (pageName === 'games') { loadGameState(); window.gameInterval = setInterval(loadGameState, 2000); load2048Records(); loadSnakeRecords(); }
+        if (pageName === 'games') { 
+            loadGameState(); 
+            load2048Records(); 
+            loadSnakeRecords(); 
+            // Отрисовываем пустые сетки при входе
+            render2048(); 
+            drawSnakeBoard();
+        }
         if (pageName === 'random') updateWheel();
     }
 
@@ -74,11 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
         element.classList.add('active');
         document.querySelectorAll('.game-content').forEach(content => content.classList.remove('active'));
         document.getElementById(`game-${gameName}`).classList.add('active');
-        if (gameName === 'game2048') load2048Records();
-        if (gameName === 'snake') loadSnakeRecords();
+        
+        if (gameName === 'game2048') { load2048Records(); render2048(); }
+        if (gameName === 'snake') { loadSnakeRecords(); drawSnakeBoard(); }
     }
 
-    // 4. ПЛАНЫ
+    // 4. ПЛАНЫ (WISHLIST)
     window.loadWishlist = function() {
         fetch('/api/wishlist').then(res => res.json()).then(items => {
             const list = document.getElementById('wish-list'); list.innerHTML = '';
@@ -117,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.deleteEvent = function(id) { fetch(`/api/events?id=${id}`, { method: 'DELETE' }).then(() => loadEvents()); }
 
-    // 6. ЗАПИСКИ (С УДАЛЕНИЕМ)
+    // 6. ЗАПИСКИ
     window.loadNotes = function() {
         fetch('/api/notes').then(res => res.json()).then(notes => {
             const list = document.getElementById('notes-list'); list.innerHTML = '';
@@ -133,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.deleteNote = function(id) { if(confirm("Удалить эту записку?")) { fetch(`/api/notes?id=${id}`, { method: 'DELETE' }).then(() => loadNotes()); } }
 
-    // 7. КРЕСТИКИ
+    // 7. КРЕСТИКИ-НОЛИКИ
     window.loadGameState = function() {
         fetch('/api/game/state').then(res => res.json()).then(state => {
             const boardElement = document.getElementById('game-board'); const statusElement = document.getElementById('game-status');
@@ -153,20 +162,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.resetGame = function() { fetch('/api/game/reset', { method: 'POST' }).then(() => { loadGameState(); showToast("Игра начата!"); }); }
 
-    // 8. ИГРА 2048 (ИСПРАВЛЕННАЯ)
-    let board2048 = []; let score2048 = 0;
+    // 8. ИГРА 2048
+    let board2048 = Array(16).fill(0); let score2048 = 0;
     window.init2048 = function() { board2048 = Array(16).fill(0); score2048 = 0; document.getElementById('my-score').textContent = "0"; addRandomTile(); addRandomTile(); render2048(); }
     function addRandomTile() { const empty = board2048.map((v, i) => v === 0 ? i : null).filter(v => v !== null); if (empty.length > 0) { const randomIndex = empty[Math.floor(Math.random() * empty.length)]; board2048[randomIndex] = Math.random() < 0.9 ? 2 : 4; } }
-    function render2048() { const grid = document.getElementById('grid-2048'); if(!grid) return; grid.innerHTML = ''; board2048.forEach(val => { const tile = document.createElement('div'); tile.className = `tile-2048 ${val !== 0 ? 'tile-' + val : ''}`; tile.textContent = val !== 0 ? val : ''; grid.appendChild(tile); }); }
+    function render2048() { 
+        const grid = document.getElementById('grid-2048'); if(!grid) return; 
+        grid.innerHTML = ''; 
+        board2048.forEach(val => { 
+            const tile = document.createElement('div'); 
+            tile.className = `tile-2048 ${val !== 0 ? 'tile-' + val : ''}`; 
+            tile.textContent = val !== 0 ? val : ''; 
+            grid.appendChild(tile); 
+        }); 
+    }
     window.saveScore2048 = function() { if (!currentUserId || score2048 === 0) return; fetch('/api/2048/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUserId, score: score2048 }) }).then(() => { showToast("Рекорд сохранен!"); load2048Records(); }); }
     window.load2048Records = function() { fetch('/api/2048/records').then(res => res.json()).then(records => { const myRec = records.find(r => r.user_id === currentUserId); const partnerRec = records.find(r => r.user_id !== currentUserId); if(document.getElementById('my-score')) document.getElementById('my-score').textContent = myRec ? myRec.score : 0; if(document.getElementById('partner-score')) document.getElementById('partner-score').textContent = partnerRec ? partnerRec.score : 0; }); }
+    
     let touchStartX = 0, touchStartY = 0;
-    document.getElementById('grid-2048').addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }, {passive: true});
-    document.getElementById('grid-2048').addEventListener('touchend', e => {
-        const diffX = e.changedTouches[0].clientX - touchStartX; const diffY = e.changedTouches[0].clientY - touchStartY;
-        if (Math.abs(diffX) > Math.abs(diffY)) { if (diffX > 30) move2048('right'); else if (diffX < -30) move2048('left'); }
-        else { if (diffY > 30) move2048('down'); else if (diffY < -30) move2048('up'); }
-    }, {passive: true});
+    const grid2048 = document.getElementById('grid-2048');
+    if(grid2048) {
+        grid2048.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }, {passive: true});
+        grid2048.addEventListener('touchend', e => {
+            const diffX = e.changedTouches[0].clientX - touchStartX; const diffY = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(diffX) > Math.abs(diffY)) { if (diffX > 30) move2048('right'); else if (diffX < -30) move2048('left'); }
+            else { if (diffY > 30) move2048('down'); else if (diffY < -30) move2048('up'); }
+        }, {passive: true});
+    }
+    
     function move2048(direction) {
         let moved = false;
         if (direction === 'left' || direction === 'right') {
@@ -181,11 +204,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('snake-canvas');
     let ctxSnake = canvas ? canvas.getContext('2d') : null;
     let snake = [], dir = {}, food = {}, scoreSnake = 0, snakeInterval = null;
-    const box = 15; // Размер клетки
+    const box = 15;
+
+    function drawSnakeBoard() {
+        if (!ctxSnake) return;
+        ctxSnake.fillStyle = "#fdfdfd"; ctxSnake.fillRect(0, 0, canvas.width, canvas.height);
+        // Рисуем сетку для красоты
+        ctxSnake.strokeStyle = "#f0f0f0";
+        for(let i=0; i<canvas.width; i+=box) {
+            ctxSnake.beginPath(); ctxSnake.moveTo(i, 0); ctxSnake.lineTo(i, canvas.height); ctxSnake.stroke();
+            ctxSnake.beginPath(); ctxSnake.moveTo(0, i); ctxSnake.lineTo(canvas.width, i); ctxSnake.stroke();
+        }
+    }
 
     window.startSnake = function() {
         if (!ctxSnake) return;
         snake = [{x: 9*box, y: 10*box}]; dir = {x: 0, y: 0}; food = getRandomFood(); scoreSnake = 0;
+        document.getElementById('my-score-snake').textContent = "0";
         if (snakeInterval) clearInterval(snakeInterval);
         snakeInterval = setInterval(drawSnake, 150);
     }
@@ -196,38 +231,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function drawSnake() {
         if (!ctxSnake) return;
-        ctxSnake.fillStyle = "#f0f0f0"; ctxSnake.fillRect(0, 0, canvas.width, canvas.height);
+        drawSnakeBoard();
         
-        // Рисуем еду
-        ctxSnake.fillStyle = "#ff9a9e"; ctxSnake.beginPath(); ctxSnake.arc(food.x + box/2, food.y + box/2, box/2, 0, Math.PI*2); ctxSnake.fill();
+        // Рисуем еду (яблочко)
+        ctxSnake.fillStyle = "#ff9a9e"; ctxSnake.beginPath(); ctxSnake.arc(food.x + box/2, food.y + box/2, box/2 - 1, 0, Math.PI*2); ctxSnake.fill();
 
-        // Двигаем змейку
-        let headX = snake[0].x + dir.x; let headY = snake[0].y + dir.y;
-        snake.unshift({x: headX, y: headY});
+        // Двигаем змейку (если не стоим на месте)
+        if (dir.x !== 0 || dir.y !== 0) {
+            let headX = snake[0].x + dir.x; let headY = snake[0].y + dir.y;
+            snake.unshift({x: headX, y: headY});
 
-        // Проверка на поедание
-        if (headX === food.x && headY === food.y) { scoreSnake++; food = getRandomFood(); } else { snake.pop(); }
+            if (headX === food.x && headY === food.y) { 
+                scoreSnake++; 
+                document.getElementById('my-score-snake').textContent = scoreSnake;
+                food = getRandomFood(); 
+            } else { 
+                snake.pop(); 
+            }
 
-        // Проверка на столкновения
-        if (headX < 0 || headX >= canvas.width || headY < 0 || headY >= canvas.height || snake.slice(1).some(s => s.x === headX && s.y === headY)) {
-            clearInterval(snakeInterval); 
-            showToast("Игра окончена! Счет: " + scoreSnake);
-            return;
+            // Проверка на столкновения
+            if (headX < 0 || headX >= canvas.width || headY < 0 || headY >= canvas.height || snake.slice(1).some(s => s.x === headX && s.y === headY)) {
+                clearInterval(snakeInterval); 
+                showToast("Игра окончена! Счет: " + scoreSnake);
+                return;
+            }
         }
 
         // Рисуем змейку
         snake.forEach((s, i) => {
-            ctxSnake.fillStyle = i === 0 ? "#a18cd1" : "#d1d1ff";
-            ctxSnake.fillRect(s.x, s.y, box-2, box-2);
+            ctxSnake.fillStyle = i === 0 ? "#a18cd1" : "#d1d1ff"; // Голова темнее
+            ctxSnake.fillRect(s.x + 1, s.y + 1, box-2, box-2);
         });
     }
 
-    // Управление змейкой (свайпы и клавиатура)
+    // Управление змейкой
+    window.changeDir = function(direction) {
+        if (direction === 'up' && dir.y === 0) dir = {x: 0, y: -box};
+        if (direction === 'down' && dir.y === 0) dir = {x: 0, y: box};
+        if (direction === 'left' && dir.x === 0) dir = {x: -box, y: 0};
+        if (direction === 'right' && dir.x === 0) dir = {x: box, y: 0};
+    }
+
     document.addEventListener('keydown', e => {
-        if (e.key === "ArrowUp" && dir.y === 0) dir = {x: 0, y: -box};
-        if (e.key === "ArrowDown" && dir.y === 0) dir = {x: 0, y: box};
-        if (e.key === "ArrowLeft" && dir.x === 0) dir = {x: -box, y: 0};
-        if (e.key === "ArrowRight" && dir.x === 0) dir = {x: box, y: 0};
+        if (e.key === "ArrowUp") changeDir('up');
+        if (e.key === "ArrowDown") changeDir('down');
+        if (e.key === "ArrowLeft") changeDir('left');
+        if (e.key === "ArrowRight") changeDir('right');
     });
 
     let snakeTouchX = 0, snakeTouchY = 0;
@@ -235,8 +284,8 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.addEventListener('touchstart', e => { snakeTouchX = e.touches[0].clientX; snakeTouchY = e.touches[0].clientY; }, {passive: true});
         canvas.addEventListener('touchend', e => {
             const diffX = e.changedTouches[0].clientX - snakeTouchX; const diffY = e.changedTouches[0].clientY - snakeTouchY;
-            if (Math.abs(diffX) > Math.abs(diffY)) { if (diffX > 20 && dir.x === 0) dir = {x: box, y: 0}; else if (diffX < -20 && dir.x === 0) dir = {x: -box, y: 0}; }
-            else { if (diffY > 20 && dir.y === 0) dir = {x: 0, y: box}; else if (diffY < -20 && dir.y === 0) dir = {x: 0, y: -box}; }
+            if (Math.abs(diffX) > Math.abs(diffY)) { if (diffX > 20) changeDir('right'); else if (diffX < -20) changeDir('left'); }
+            else { if (diffY > 20) changeDir('down'); else if (diffY < -20) changeDir('up'); }
         }, {passive: true});
     }
 
@@ -244,10 +293,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.loadSnakeRecords = function() { fetch('/api/snake/records').then(res => res.json()).then(records => { const myRec = records.find(r => r.user_id === currentUserId); const partnerRec = records.find(r => r.user_id !== currentUserId); if(document.getElementById('my-score-snake')) document.getElementById('my-score-snake').textContent = myRec ? myRec.score : 0; if(document.getElementById('partner-score-snake')) document.getElementById('partner-score-snake').textContent = partnerRec ? partnerRec.score : 0; }); }
 
     // 10. КОЛЕСО И РАНДОМ
-    // (Оставляем предыдущую логику)
     const wheelData = { food: ["Пицца 🍕", "Суши 🍣", "Бургеры 🍔", "Паста 🍝", "Шаурма 🌯", "Салат 🥗"], activity: ["Кино 🎬", "Прогулка 🚶", "Дома 🏠", "Кафе ☕", "Игры 🎮", "Спорт 🏃"], movie: ["Комедия 😂", "Ужасы 👻", "Фантастика 🚀", "Драма 🎭", "Мультфильм 🧸", "Боевик 💥"] };
     const wheelColors = ["#ff9a9e", "#fecfef", "#a18cd1", "#fbc2eb", "#ffd1d1", "#d1d1ff"];
     let currentAngle = 0, isSpinning = false, wheelCanvas, ctxWheel, currentWheelOptions = [];
+    
     window.updateWheel = function() { const cat = document.getElementById('wheel-category').value; currentWheelOptions = wheelData[cat]; drawWheel(); }
     window.drawWheel = function() {
         wheelCanvas = document.getElementById('wheel'); if (!wheelCanvas) return; ctxWheel = wheelCanvas.getContext('2d');
